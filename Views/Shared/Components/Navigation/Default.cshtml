@@ -1,0 +1,90 @@
+@model IReadOnlyList<string>
+@if (Model.Contains("alumno.ver")) { <li class="nav-item"><a class="nav-link text-dark" asp-controller="Alumno" asp-action="Index">Mis cursos y pagos</a></li> }
+@if (Model.Contains("credito.configurar")) { <li class="nav-item"><a class="nav-link text-dark" asp-controller="Credito" asp-action="Configuracion">Reglas de crédito</a></li> }
+@if (Model.Contains("estudiante.vincular")) { <li class="nav-item"><a class="nav-link text-dark" asp-controller="Credito" asp-action="Cuentas">Cuentas de estudiantes</a></li> }
+@if (Model.Contains("catalogo.gestionar")) { <li class="nav-item"><a class="nav-link text-dark" asp-controller="Credito" asp-action="Catalogos">Catálogos</a></li> }
+
+@if (Model.Contains("matricula.ver"))
+{
+    <li class="nav-item"><a class="nav-link text-dark" asp-controller="Matricula" asp-action="Index">Matrículas y pagos</a></li>
+}
+
+
+@if (Model.Contains("curso.ver"))
+{
+    <li class="nav-item">
+        <a class="nav-link text-dark"
+           asp-controller="Curso"
+           asp-action="Index">
+            Cursos
+        </a>
+    </li>
+}
+
+@if (Model.Contains("estudiante.ver"))
+{
+    <li class="nav-item">
+        <a class="nav-link text-dark"
+           asp-controller="Estudiante"
+           asp-action="Index">
+            Estudiantes
+        </a>
+    </li>
+}
+
+@if (Model.Contains("rol.ver") ||
+     Model.Contains("permiso.ver") ||
+     Model.Contains("usuario.ver"))
+{
+    <li class="nav-item dropdown">
+        <button class="nav-link dropdown-toggle btn btn-link text-dark"
+                type="button"
+                data-bs-toggle="dropdown"
+                aria-expanded="false">
+            Administración
+        </button>
+
+        <ul class="dropdown-menu">
+            <li>
+                <a class="dropdown-item"
+                   asp-controller="Admin"
+                   asp-action="Index">
+                    Panel de administración
+                </a>
+            </li>
+
+            @if (Model.Contains("rol.ver"))
+            {
+                <li>
+                    <a class="dropdown-item"
+                       asp-controller="Admin"
+                       asp-action="Roles">
+                        Roles
+                    </a>
+                </li>
+            }
+
+            @if (Model.Contains("permiso.ver"))
+            {
+                <li>
+                    <a class="dropdown-item"
+                       asp-controller="Admin"
+                       asp-action="Permissions">
+                        Permisos
+                    </a>
+                </li>
+            }
+
+            @if (Model.Contains("usuario.ver"))
+            {
+                <li>
+                    <a class="dropdown-item"
+                       asp-controller="Admin"
+                       asp-action="Users">
+                        Usuarios
+                    </a>
+                </li>
+            }
+        </ul>
+    </li>
+}

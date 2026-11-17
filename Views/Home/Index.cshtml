@@ -1,0 +1,28 @@
+@{
+    ViewData["Title"] = "Inicio";
+}
+<section class="academia-hero">
+    <span class="academia-label">MATRÍCULAS Y PAGOS</span>
+    <h1>EduNova</h1>
+    <p>Sistema interno para organizar las matrículas y los abonos de una academia de cursos cortos.</p>
+    @if (User.Identity?.IsAuthenticated != true)
+    {
+        <a class="btn btn-light btn-lg" asp-controller="Auth" asp-action="Login">Iniciar sesión</a>
+    }
+    else
+    {
+        @if (User.HasPermission("alumno.ver")) { <a asp-controller="Alumno" asp-action="Index" class="btn btn-light btn-lg">Mis cursos y pagos</a> }
+        else if (User.HasPermission("matricula.ver")) { <a asp-controller="Matricula" asp-action="Index" class="btn btn-light btn-lg">Matrículas y pagos</a> }
+        else { <span class="academia-session">Sesión iniciada · Usa el menú según tus permisos</span> }
+    }
+</section>
+<section class="academia-intro" aria-labelledby="modules-title">
+    <h2 id="modules-title">Control de inscripciones y saldos</h2>
+    <p>Dirigido al personal administrativo que registra estudiantes, inscribe sus cursos y recibe sus abonos. Las opciones disponibles dependen de los permisos de cada cuenta.</p>
+    <div class="academia-grid">
+        <article class="academia-card"><span class="academia-number">01</span><h3>Cursos</h3><p>Registra y consulta los cursos que ofrece la academia, con su descripción y precio.</p></article>
+        <article class="academia-card"><span class="academia-number">02</span><h3>Estudiantes</h3><p>Organiza nombres, apellidos, y correos electrónicos, sin asignar cursos desde este registro.</p></article>
+        <article class="academia-card"><span class="academia-number">03</span><h3>Matrículas y pagos</h3><p>Inscribe estudiantes en varios cursos, registra abonos y consulta el saldo pendiente.</p></article>
+    </div>
+</section>
+<section class="academia-process" aria-labelledby="process-title"><h2 id="process-title">¿Cómo empezar?</h2><ol><li>Inicia sesión con tu cuenta.</li><li>Configura los cursos y sus precios desde el módulo Cursos.</li><li>Registra al estudiante, crea su matrícula y añade sus abonos.</li></ol></section>

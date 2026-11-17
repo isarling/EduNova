@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>@ViewData["Title"] - EduNova</title>
+
+    <script type="importmap"></script>
+
+    <link rel="stylesheet"
+          href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+
+    <link rel="stylesheet"
+          href="~/css/site.css"
+          asp-append-version="true" />
+
+    <link rel="stylesheet"
+          href="~/css/admin.css"
+          asp-append-version="true" />
+
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
+
+    <link rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" />
+
+    <link rel="stylesheet"
+          href="~/EduNova.styles.css"
+          asp-append-version="true" />
+
+    <link rel="stylesheet" href="~/css/edunova.css" asp-append-version="true" />
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom box-shadow mb-3">
+            <div class="container-fluid">
+                <a class="navbar-brand"
+                   asp-controller="Home"
+                   asp-action="Index">
+                    EduNova
+                </a>
+
+                <button class="navbar-toggler"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#mainNavbar"
+                        aria-controls="mainNavbar"
+                        aria-expanded="false"
+                        aria-label="Abrir menú">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div id="mainNavbar"
+                     class="navbar-collapse collapse d-lg-inline-flex justify-content-between">
+                    <ul class="navbar-nav flex-grow-1">
+                        <li class="nav-item">
+                            <a class="nav-link text-dark"
+                               asp-controller="Home"
+                               asp-action="Index">
+                                Inicio
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link text-dark"
+                               asp-controller="Home"
+                               asp-action="Privacy">
+                                Acerca del sistema
+                            </a>
+                        </li>
+
+                        @if (User.Identity?.IsAuthenticated == true)
+                        {
+                            @await Component.InvokeAsync("Navigation")
+
+                            <li class="nav-item ms-auto d-flex align-items-center gap-2">
+                                <button type="button"
+                                        id="refreshSessionBtn"
+                                        class="btn btn-outline-primary btn-sm"
+                                        title="Actualizar acceso a las funciones">
+                                    <i class="fa-solid fa-rotate me-1"></i>
+                                    Actualizar sesión
+                                </button>
+
+                                <button type="button"
+                                        id="logoutBtn"
+                                        class="btn btn-outline-danger btn-sm">
+                                    Cerrar sesión
+                                </button>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="nav-item ms-auto">
+                                <a class="nav-link text-dark"
+                                   asp-controller="Auth"
+                                   asp-action="Login">
+                                    Iniciar sesión
+                                </a>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <div class="container">
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="border-top footer text-muted">
+        <div class="container">
+            &copy; 2026 - EduNova -
+            <a asp-controller="Home" asp-action="Privacy">
+                Acerca del sistema
+            </a>
+        </div>
+    </footer>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script>
+        async function refreshSession(showAlert = true) {
+            const button = document.getElementById('refreshSessionBtn');
+
+            if (button) button.disabled = true;
+
+            try {
+                const response = await axios.post('/Auth/RefreshToken');
+
+                if (response.data.success !== true) {
+                    throw new Error('No se pudo actualizar la sesión.');
+                }
+
+                if (showAlert) {
+                    await Swal.fire({
+                        title: 'Sesión actualizada',
+                        text: 'Tu acceso a las funciones fue actualizado.',
+                        icon: 'success',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+
+                    window.location.reload();
+                }
+
+                return true;
+            } catch {
+                if (showAlert) {
+                    await Swal.fire(
+                        'Error',
+                        'No se pudo actualizar la sesión. Vuelve a iniciar sesión.',
+                        'error'
+                    );
+                }
+
+                return false;
+            } finally {
+                if (button) button.disabled = false;
+            }
+        }
+
+        document.getElementById('refreshSessionBtn')
+            ?.addEventListener('click', () => refreshSession(true));
+
+        document.getElementById('logoutBtn')
+            ?.addEventListener('click', async () => {
+                const confirmLogout = await Swal.fire({
+                    title: '¿Cerrar sesión?',
+                    text: 'Tu sesión actual se cerrará.',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Sí, cerrar',
+                    cancelButtonText: 'Cancelar',
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#3085d6'
+                });
+
+                if (!confirmLogout.isConfirmed) return;
+
+                try {
+                    const response = await axios.post('/Auth/Logout');
+
+                    if (response.data.success === true) {
+                        await Swal.fire({
+                            title: 'Sesión cerrada',
+                            text: response.data.message,
+                            icon: 'success',
+                            confirmButtonText: 'OK'
+                        });
+
+                        window.location.href = '/Auth/Login';
+                    } else {
+                        await Swal.fire(
+                            'Error',
+                            'No se pudo cerrar la sesión.',
+                            'error'
+                        );
+                    }
+                } catch {
+                    await Swal.fire(
+                        'Error',
+                        'Ocurrió un error al intentar cerrar la sesión.',
+                        'error'
+                    );
+                }
+            });
+    </script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

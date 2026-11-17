@@ -1,0 +1,118 @@
+@using EduNova.Extensions
+
+@{
+    ViewData["Title"] = "Estudiantes";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-1">Estudiantes</h1>
+        <p class="text-muted mb-0">Datos de contacto de los estudiantes. Inscribe sus cursos desde Matrículas y pagos.</p>
+    </div>
+
+    @if (User.HasPermission("estudiante.crear"))
+    {
+        <button type="button"
+                class="btn btn-success btn-sm"
+                id="btnNuevoEstudiante">
+            <i class="fa-solid fa-plus me-1"></i>
+            Nuevo estudiante
+        </button>
+    }
+</div>
+
+<div class="card admin-card">
+    <div class="card-body table-responsive">
+        <table id="estudianteTable"
+               class="table table-striped table-hover align-middle w-100">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Apellido</th>
+                    <th>Correo</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</div>
+
+<div class="modal fade" id="estudianteModal" tabindex="-1"
+     aria-labelledby="estudianteModalTitle" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="estudianteModalTitle">
+                    Estudiante
+                </h5>
+                <button type="button" class="btn-close"
+                        data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+
+            <form id="estudianteForm" novalidate>
+                <div class="modal-body">
+                    <input type="hidden" id="estudianteId" />
+
+                    <div class="mb-3">
+                        <label class="form-label" for="estudianteNombre">
+                            Nombre
+                        </label>
+                        <input type="text" id="estudianteNombre"
+                               name="estudianteNombre"
+                               class="form-control" maxlength="100" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label" for="estudianteApellido">
+                            Apellido
+                        </label>
+                        <input type="text" id="estudianteApellido"
+                               name="estudianteApellido"
+                               class="form-control" maxlength="100" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label" for="estudianteEmail">
+                            Correo electrónico
+                        </label>
+                        <input type="email" id="estudianteEmail"
+                               name="estudianteEmail"
+                               class="form-control" maxlength="150" />
+                    </div>
+
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary"
+                            data-bs-dismiss="modal">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-primary"
+                            id="btnGuardarEstudiante">
+                        Guardar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <link rel="stylesheet"
+          href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css" />
+}
+
+@section Scripts {
+    <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://unpkg.com/just-validate@4.3.0/dist/just-validate.production.min.js"></script>
+    <script>
+        window.estudiantesConfig = {
+            canUpdate: @User.HasPermission("estudiante.actualizar").ToString().ToLowerInvariant(),
+            canDelete: @User.HasPermission("estudiante.borrar").ToString().ToLowerInvariant()
+        };
+    </script>
+    <script src="~/js/estudiante.js" asp-append-version="true"></script>
+}

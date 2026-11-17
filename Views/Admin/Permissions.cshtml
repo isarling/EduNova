@@ -1,0 +1,117 @@
+@using EduNova.Extensions
+
+@{
+    ViewData["Title"] = "Permisos";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-1">Permisos</h1>
+        <p class="text-muted mb-0">
+            Crea y administra permisos para roles y usuarios.
+        </p>
+    </div>
+    <div class="d-flex gap-2">
+        @if (User.HasPermission("permiso.crear"))
+        {
+            <button type="button"
+                    class="btn btn-success btn-sm"
+                    id="btnNuevoPermiso">
+                <i class="fa-solid fa-plus me-1"></i>
+                Nuevo permiso
+            </button>
+        }
+        <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+            Volver al panel
+        </a>
+    </div>
+</div>
+
+<div id="permisosError" class="alert alert-danger d-none" role="alert"></div>
+
+<div class="card admin-card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table id="permisosTable"
+                   class="table table-striped align-middle w-100">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Descripción</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="permisoModal" tabindex="-1"
+     aria-labelledby="permisoModalTitle" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="permisoModalTitle">Permiso</h5>
+                <button type="button" class="btn-close"
+                        data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <form id="permisoForm" novalidate>
+                <div class="modal-body">
+                    <input type="hidden" id="permisoId" />
+
+                    <div class="mb-3">
+                        <label class="form-label" for="permisoNombre">
+                            Nombre
+                        </label>
+                        <input type="text" id="permisoNombre"
+                               class="form-control" maxlength="150"
+                               placeholder="Ej: estudiante.crear" />
+                        <div class="form-text">
+                            Formato: recurso.accion
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label" for="permisoDescripcion">
+                            Descripción
+                        </label>
+                        <input type="text" id="permisoDescripcion"
+                               class="form-control" maxlength="250"
+                               placeholder="Descripción opcional" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary"
+                            data-bs-dismiss="modal">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-primary"
+                            id="btnGuardarPermiso">
+                        Guardar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <link rel="stylesheet"
+          href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css" />
+}
+
+@section Scripts {
+    <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://unpkg.com/just-validate@4.3.0/dist/just-validate.production.min.js"></script>
+    <script>
+        window.permisosConfig = {
+            canCreate: @((ViewBag.CanCreate as bool? ?? false).ToString().ToLowerInvariant()),
+            canUpdate: @((ViewBag.CanUpdate as bool? ?? false).ToString().ToLowerInvariant()),
+            canDelete: @((ViewBag.CanDelete as bool? ?? false).ToString().ToLowerInvariant())
+        };
+    </script>
+    <script src="~/js/permisos.js" asp-append-version="true"></script>
+}

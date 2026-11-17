@@ -1,0 +1,16 @@
+@model EduNova.DTOS.PoliticaCreditoDto
+@{ ViewData["Title"] = "Reglas de crédito"; }
+<h1 class="mt-4">Reglas de matrícula y pagos</h1><p>Valores de demostración configurables. El administrador debe aprobarlos antes de usar el sistema con datos reales.</p>
+<partial name="_Mensajes" />
+<form method="post" asp-action="Configuracion" class="academia-card"><div asp-validation-summary="All" class="text-danger" role="alert"></div><div class="row g-3">
+<div class="col-md-6"><label asp-for="DeudaMaxima" class="form-label">Deuda máxima total por estudiante C$</label><input asp-for="DeudaMaxima" type="number" min="0" max="99999999.99" step="0.01" class="form-control" required /></div>
+<div class="col-md-6"><label asp-for="PorcentajeInicial" class="form-label">Pago inicial mínimo %</label><input asp-for="PorcentajeInicial" type="number" min="0" max="100" step="0.01" class="form-control" required /></div>
+<div class="col-md-6"><label asp-for="MaxCursosSinDeuda" class="form-label">Máximo de cursos activos sin deuda</label><input asp-for="MaxCursosSinDeuda" type="number" min="1" max="20" class="form-control" required /></div>
+<div class="col-md-6"><label asp-for="MaxCursosConDeuda" class="form-label">Máximo de cursos activos con deuda</label><input asp-for="MaxCursosConDeuda" type="number" min="1" max="20" class="form-control" required /></div>
+<div class="col-md-6"><label asp-for="AbonoMinimo" class="form-label">Abono mínimo C$</label><input asp-for="AbonoMinimo" type="number" min="0.01" max="99999999.99" step="0.01" class="form-control" required /></div>
+<div class="col-md-6"><label asp-for="MaxCuotas" class="form-label">Máximo de cuotas por curso</label><input asp-for="MaxCuotas" type="number" min="1" max="24" class="form-control" required /></div>
+<div class="col-md-6"><label asp-for="DiasEntreCuotas" class="form-label">Días entre vencimientos</label><input asp-for="DiasEntreCuotas" type="number" min="1" max="90" class="form-control" required /></div>
+<div class="col-md-6"><label asp-for="DiasGracia" class="form-label">Días de atraso permitidos</label><input asp-for="DiasGracia" type="number" min="0" max="90" class="form-control" required /></div>
+<div class="col-md-6"><label asp-for="PorcentajeBeneficio" class="form-label">Descuento para otra matrícula por pago anticipado %</label><input asp-for="PorcentajeBeneficio" type="number" min="0" max="50" step="0.01" class="form-control" required /><small>Configura 0 para desactivar nuevos beneficios.</small></div>
+<div class="col-md-6"><label asp-for="DiasVigenciaBeneficio" class="form-label">Vigencia del beneficio en días</label><input asp-for="DiasVigenciaBeneficio" type="number" min="1" max="365" class="form-control" required /></div>
+</div><p class="mt-3">Las cuotas ya pactadas conservan sus montos y fechas. Los límites y el abono mínimo se comprueban con la configuración vigente.</p><button class="btn btn-primary" type="submit">Guardar reglas</button></form>

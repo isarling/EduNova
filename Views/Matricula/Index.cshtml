@@ -1,0 +1,302 @@
+@model EduNova.DTOS.ConsultaMatriculasDto
+
+@{
+    ViewData["Title"] = "Matrículas y pagos";
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 my-4">
+    <div>
+        <h1>Matrículas y pagos</h1>
+        <p>Consulta las matrículas o busca los cursos y pagos de un estudiante.</p>
+    </div>
+
+    @if (User.HasPermission("matricula.crear"))
+    {
+        <a asp-action="Crear" class="btn btn-primary">Nueva matrícula</a>
+    }
+</div>
+
+@if (TempData["Exito"] is string exito)
+{
+    <div class="alert alert-success" role="status">@exito</div>
+}
+
+<form asp-action="Index" method="get" class="academia-card mb-4" role="search">
+    <label for="nombre" class="form-label">
+        Buscar estudiante por nombre o apellido
+    </label>
+
+    <div class="d-flex flex-wrap gap-2">
+        <input id="nombre"
+               name="nombre"
+               value="@Model.Busqueda"
+               class="form-control"
+               style="max-width:400px"
+               placeholder="Ejemplo: Ana" />
+
+        <button type="submit" class="btn btn-primary">Buscar</button>
+
+        <a asp-action="Index" class="btn btn-outline-primary">Ver todas</a>
+    </div>
+</form>
+
+@if (string.IsNullOrWhiteSpace(Model.Busqueda))
+{
+    <div class="academia-grid">
+        <article class="academia-card">
+            <h2 class="h6">Matrículas</h2>
+            <strong class="h3">@Model.Matriculas.Count</strong>
+        </article>
+
+        <article class="academia-card">
+            <h2 class="h6">Total abonado</h2>
+            <strong class="h3">
+                C$ @Model.Matriculas.Sum(m => m.Pagado).ToString("N2")
+            </strong>
+        </article>
+
+        <article class="academia-card">
+            <h2 class="h6">Saldo pendiente</h2>
+            <strong class="h3">
+                C$ @Model.Matriculas.Sum(m => m.Saldo).ToString("N2")
+            </strong>
+        </article>
+    </div>
+
+    <div class="table-responsive bg-white rounded p-3">
+        <table class="table align-middle">
+            <caption>
+                Importes en córdobas. Fecha y hora de Nicaragua.
+            </caption>
+
+            <thead>
+                <tr>
+                    <th>Número</th>
+                    <th>Estudiante</th>
+                    <th>Fecha y hora de matrícula</th>
+                    <th>Total C$</th>
+                    <th>Abonado C$</th>
+                    <th>Saldo C$</th>
+                    <th>Estado</th>
+                    <th>Acción</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                @foreach (var m in Model.Matriculas)
+                {
+                    <tr>
+                        <td>@m.Id</td>
+                        <td>@m.Estudiante</td>
+                        <td>@m.Fecha.AddHours(-6).ToString("dd/MM/yyyy HH:mm")</td>
+                        <td>@m.Total.ToString("N2")</td>
+                        <td>@m.Pagado.ToString("N2")</td>
+                        <td>@m.Saldo.ToString("N2")</td>
+                        <td>@(m.Saldo == 0 ? "Pagada" : "Pendiente")</td>
+                        <td>
+                            <a asp-action="Detalle"
+                               asp-route-id="@m.Id"
+                               class="btn btn-outline-primary btn-sm">
+                                Ver detalle
+                            </a>
+                        </td>
+                    </tr>
+                }
+
+                @if (Model.Matriculas.Count == 0)
+                {
+                    <tr>
+                        <td colspan="8">Todavía no hay matrículas registradas.</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+else
+{
+    <h2 class="h4">Resultados para «@Model.Busqueda»</h2>
+
+    @if (Model.Personas.Count == 0)
+    {
+        <div class="alert alert-info" role="status">
+            No se encontraron estudiantes con ese nombre o apellido.
+        </div>
+    }
+
+    @foreach (var persona in Model.Personas)
+    {
+        <section class="academia-card mb-4">
+            <h2 class="h3">@persona.Nombre</h2>
+
+            <div class="academia-grid">
+                <article>
+                    <h3 class="h6">Cursos matriculados</h3>
+                    <strong class="h4">@persona.CantidadCursos</strong>
+                </article>
+
+                <article>
+                    <h3 class="h6">Total abonado</h3>
+                    <strong class="h4">
+                        C$ @persona.Pagado.ToString("N2")
+                    </strong>
+                </article>
+
+                <article>
+                    <h3 class="h6">Deuda total</h3>
+                    <strong class="h4">
+                        C$ @persona.Saldo.ToString("N2")
+                    </strong>
+                </article>
+            </div>
+
+            <h3 class="h5 mt-4">Cursos de este estudiante</h3>
+
+            <div class="table-responsive">
+                <table class="table align-middle">
+                    <thead>
+                        <tr>
+                            <th>Matrícula</th>
+                            <th>Curso</th>
+                            <th>Fecha y hora de matrícula</th>
+                            <th>Costo C$</th>
+                            <th>Abonado C$</th>
+                            <th>Debe C$</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @foreach (var curso in persona.Cursos)
+                        {
+                            <tr>
+                                <td>@curso.MatriculaId</td>
+                                <td>@curso.Nombre</td>
+                                <td>
+                                    @curso.Fecha.AddHours(-6).ToString("dd/MM/yyyy HH:mm")
+                                </td>
+                                <td>@curso.Costo.ToString("N2")</td>
+                                <td>@curso.Pagado.ToString("N2")</td>
+                                <td>@curso.Saldo.ToString("N2")</td>
+                                <td>
+                                    <a asp-action="Detalle"
+                                       asp-route-id="@curso.MatriculaId">
+                                        Ver detalle
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+
+                        @if (persona.Cursos.Count == 0)
+                        {
+                            <tr>
+                                <td colspan="7">
+                                    Este estudiante todavía no tiene cursos matriculados.
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 class="h5 mt-4">Fechas programadas de pago</h3>
+
+            <div class="table-responsive">
+                <table class="table align-middle">
+                    <thead>
+                        <tr>
+                            <th>Matrícula</th>
+                            <th>Curso</th>
+                            <th>Cuota</th>
+                            <th>Vencimiento</th>
+                            <th>Monto C$</th>
+                            <th>Pendiente C$</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @foreach (var cuota in persona.Cuotas)
+                        {
+                            <tr>
+                                <td>@cuota.MatriculaId</td>
+                                <td>@cuota.Curso</td>
+                                <td>@cuota.Numero</td>
+                                <td>@cuota.Vencimiento.ToString("dd/MM/yyyy")</td>
+                                <td>@cuota.Monto.ToString("N2")</td>
+                                <td>@cuota.Saldo.ToString("N2")</td>
+                                <td>
+                                    @(cuota.Saldo == 0
+                                                            ? "Pagada"
+                                                            : cuota.Vencimiento.Date < EduNova.Services.ReglasCredito.Hoy
+                                                            ? "Vencida"
+                                                            : "Pendiente")
+                    </td>
+                </tr>
+                                }
+
+                        @if (persona.Cuotas.Count == 0)
+                        {
+                            <tr>
+                                <td colspan="7">Sin cuotas registradas.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 class="h5 mt-4">Pagos realizados</h3>
+
+            @if (persona.Pagos.Count == 0)
+            {
+                <p>Sin pagos registrados.</p>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table align-middle">
+                        <thead>
+                            <tr>
+                                <th>Fecha y hora del pago</th>
+                                <th>Monto C$</th>
+                                <th>Referencia</th>
+                                <th>Recibo</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            @foreach (var pago in persona.Pagos)
+                            {
+                                <tr>
+                                    <td>
+                                        @pago.Fecha.AddHours(-6).ToString("dd/MM/yyyy HH:mm")
+                                    </td>
+                                    <td>@pago.Monto.ToString("N2")</td>
+                                    <td>@pago.Referencia</td>
+                                    <td>
+                                        @if (pago.ReciboId.HasValue &&
+                                                                User.HasPermission("documento.ver"))
+                                        {
+                                            <a asp-controller="Documentos"
+                                               asp-action="Recibo"
+                                               asp-route-id="@pago.ReciboId">
+                                                Ver recibo
+                                            </a>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+
+            <p class="small mt-3">
+                Los importes corresponden únicamente a @persona.Nombre.
+                La cantidad de cursos incluye todas sus inscripciones,
+                también las de cursos finalizados.
+                Las horas se muestran en horario de Nicaragua.
+            </p>
+        </section>
+    }
+}

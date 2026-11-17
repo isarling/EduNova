@@ -1,0 +1,491 @@
+@model EduNova.DTOS.CrearMatriculaDto
+
+@{
+    ViewData["Title"] = "Nueva matrícula";
+}
+
+<h1 class="mt-4">Nueva matrícula</h1>
+
+<p>
+    Busca al estudiante y selecciona los cursos que desea tomar.
+    El precio está definido en el catálogo.
+</p>
+
+<form asp-action="Crear" method="post" class="academia-card">
+    <input asp-for="OperacionId" type="hidden" />
+
+    <p>
+        Reglas actuales: deuda máxima
+        C$ @Model.Politica.DeudaMaxima.ToString("N2"),
+        inicial mínimo @Model.Politica.PorcentajeInicial %,
+        hasta @Model.Politica.MaxCuotas cuotas por curso.
+    </p>
+
+    <div asp-validation-summary="All"
+         class="text-danger"
+         role="alert">
+    </div>
+
+    <label for="buscarEstudiante" class="form-label">
+        Buscar estudiante por nombre o apellido
+    </label>
+
+    <input id="buscarEstudiante"
+           type="text"
+           class="form-control"
+           placeholder="Escribe el nombre o apellido..."
+           autocomplete="off"
+           aria-describedby="ayudaBusquedaEstudiante"
+           aria-controls="resultadosEstudiantes" />
+
+    <div id="resultadosEstudiantes"
+         class="list-group mt-1"
+         style="max-height:240px; overflow-y:auto;"
+         hidden>
+    </div>
+
+    <select asp-for="EstudianteId" id="EstudianteId" hidden>
+        <option value="">Sin estudiante seleccionado</option>
+
+        @foreach (var estudiante in Model.Estudiantes)
+        {
+            <option value="@estudiante.Id">
+                @($"{estudiante.Nombre} — Registro {estudiante.Id}")
+            </option>
+        }
+    </select>
+
+    <p id="ayudaBusquedaEstudiante"
+       class="small text-muted mt-2"
+       aria-live="polite">
+        Escribe para buscar un estudiante.
+    </p>
+
+    @if (User.HasPermission("estudiante.crear"))
+    {
+        <div class="mb-4">
+            <p class="mb-2">¿El estudiante no aparece?</p>
+
+            <a asp-controller="Estudiante"
+               asp-action="NuevoParaMatricula"
+               class="btn btn-outline-primary">
+                Registrar nuevo estudiante
+            </a>
+
+            <p class="small text-muted mt-2">
+                Regístralo antes de seleccionar los cursos.
+                Al guardar, regresarás con el estudiante seleccionado.
+            </p>
+        </div>
+    }
+
+    @if (TempData["Exito"] is string mensaje)
+    {
+        <div class="alert alert-success" role="status">
+            @mensaje
+        </div>
+    }
+
+    <p id="situacionEstudiante"
+       class="text-muted"
+       aria-live="polite">
+        Busca un estudiante para consultar su situación.
+    </p>
+
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Incluir</th>
+                    <th>Curso</th>
+                    <th>Precio C$</th>
+                    <th>Cuotas</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                @for (int i = 0; i < Model.Lineas.Count; i++)
+                {
+                    <tr>
+                        <td>
+                            @if (Model.Lineas[i].Costo > 0)
+                            {
+                                <input asp-for="Lineas[i].Seleccionado"
+                                       class="form-check-input curso-seleccion"
+                                       data-precio="@Model.Lineas[i].Costo.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                                       aria-label="Incluir @Model.Lineas[i].Nombre" />
+                            }
+                            else
+                            {
+                                <input type="checkbox"
+                                       disabled
+                                       class="form-check-input"
+                                       aria-label="@Model.Lineas[i].Nombre sin precio configurado" />
+                            }
+
+                            <input asp-for="Lineas[i].CursoId"
+                                   type="hidden" />
+                        </td>
+
+                        <td>@Model.Lineas[i].Nombre</td>
+
+                        <td>
+                            @if (Model.Lineas[i].Costo > 0)
+                            {
+                                @Model.Lineas[i].Costo.ToString("N2")
+                            }
+                            else
+                            {
+                                <span class="text-danger">
+                                    Precio por configurar
+                                </span>
+                            }
+                        </td>
+
+                        <td>
+                            <input asp-for="Lineas[i].CantidadCuotas"
+                                   type="number"
+                                   min="1"
+                                   max="@Model.Politica.MaxCuotas"
+                                   class="form-control"
+                                   aria-label="Número de cuotas de @Model.Lineas[i].Nombre" />
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <p class="fs-5">
+        Total seleccionado:
+        <strong id="totalMatricula"
+                data-inicial="@Model.Politica.PorcentajeInicial.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                aria-live="polite">
+            C$ 0.00
+        </strong>
+    </p>
+
+    <p class="text-muted">
+        Si un precio cambia antes de guardar, revisa el total
+        confirmado en el detalle de matrícula.
+    </p>
+
+    <div class="form-check mb-3">
+        <input asp-for="AplicarBeneficio" class="form-check-input" />
+
+        <label asp-for="AplicarBeneficio" class="form-check-label">
+            Usar un descuento vigente por pago anticipado
+            si el estudiante lo tiene
+        </label>
+    </div>
+
+    <p id="resumenInicial" aria-live="polite">
+        Elige los cursos para ver el mínimo inicial.
+    </p>
+
+    <label asp-for="PagoInicial" class="form-label">
+        Pago inicial recibido C$
+    </label>
+
+    <input asp-for="PagoInicial"
+           type="number"
+           min="0"
+           max="99999999.99"
+           step="0.01"
+           required
+           class="form-control mb-3" />
+
+    <p>
+        Primera cuota a @Model.Politica.DiasEntreCuotas días
+        de la matrícula. Los pagos iniciales se aplican a las
+        primeras cuotas y generan su recibo.
+    </p>
+
+    <button class="btn btn-primary" type="submit">
+        Confirmar matrícula y pago inicial
+    </button>
+
+    <a asp-action="Index" class="btn btn-outline-secondary">
+        Cancelar
+    </a>
+</form>
+
+@section Scripts {
+    <script>
+        (() => {
+            const buscador = document.getElementById('buscarEstudiante');
+            const selector = document.getElementById('EstudianteId');
+            const resultados = document.getElementById('resultadosEstudiantes');
+            const ayuda = document.getElementById('ayudaBusquedaEstudiante');
+
+            const estudiantes = Array.from(selector.options)
+                .filter(opcion => opcion.value !== '');
+
+            function normalizar(texto) {
+                return texto.normalize('NFD')
+                    .replace(/[\u0300-\u036f]/g, '')
+                    .toLowerCase()
+                    .trim();
+            }
+
+            function cerrarResultados() {
+                resultados.replaceChildren();
+                resultados.hidden = true;
+            }
+
+            function seleccionar(opcion) {
+                selector.value = opcion.value;
+                buscador.value = opcion.text.trim();
+                cerrarResultados();
+
+                ayuda.textContent = 'Estudiante seleccionado: ' +
+                    opcion.text.trim();
+
+                selector.dispatchEvent(new Event('change'));
+            }
+
+            function mostrarCoincidencias() {
+                cerrarResultados();
+
+                const texto = normalizar(buscador.value);
+
+                if (!texto) {
+                    ayuda.textContent = 'Escribe para buscar un estudiante.';
+                    return;
+                }
+
+                const palabras = texto.split(/\s+/);
+
+                const coincidencias = estudiantes.filter(opcion => {
+                    const nombre = normalizar(opcion.text);
+                    return palabras.every(palabra => nombre.includes(palabra));
+                });
+
+                if (coincidencias.length === 0) {
+                    ayuda.textContent =
+                        'No hay coincidencias. Usa Registrar nuevo estudiante.';
+                    return;
+                }
+
+                coincidencias.forEach(opcion => {
+                    const boton = document.createElement('button');
+
+                    boton.type = 'button';
+                    boton.className =
+                        'list-group-item list-group-item-action';
+                    boton.textContent = opcion.text.trim();
+
+                    boton.addEventListener('click', function () {
+                        seleccionar(opcion);
+                    });
+
+                    resultados.appendChild(boton);
+                });
+
+                resultados.hidden = false;
+
+                ayuda.textContent =
+                    'Selecciona a la persona entre los resultados.';
+            }
+
+            if (selector.value) {
+                buscador.value = selector.selectedOptions[0].text.trim();
+                ayuda.textContent = 'Estudiante seleccionado.';
+            }
+
+            buscador.addEventListener('input', function () {
+                selector.value = '';
+                selector.dispatchEvent(new Event('change'));
+                mostrarCoincidencias();
+            });
+
+            buscador.addEventListener('focus', function () {
+                if (!selector.value) {
+                    mostrarCoincidencias();
+                }
+            });
+
+            buscador.addEventListener('keydown', function (evento) {
+                if (evento.key === 'ArrowDown' && !resultados.hidden) {
+                    evento.preventDefault();
+                    resultados.querySelector('button')?.focus();
+                }
+
+                if (evento.key === 'Escape') {
+                    cerrarResultados();
+                }
+
+                if (evento.key === 'Enter') {
+                    evento.preventDefault();
+
+                    if (!resultados.hidden) {
+                        resultados.querySelector('button')?.focus();
+                    }
+                }
+            });
+
+            resultados.addEventListener('keydown', function (evento) {
+                const botones = Array.from(
+                    resultados.querySelectorAll('button')
+                );
+
+                const posicion = botones.indexOf(document.activeElement);
+
+                if (evento.key === 'ArrowDown') {
+                    evento.preventDefault();
+
+                    botones[
+                        Math.min(posicion + 1, botones.length - 1)
+                    ]?.focus();
+                }
+
+                if (evento.key === 'ArrowUp') {
+                    evento.preventDefault();
+
+                    if (posicion <= 0) {
+                        buscador.focus();
+                    } else {
+                        botones[posicion - 1].focus();
+                    }
+                }
+
+                if (evento.key === 'Escape') {
+                    cerrarResultados();
+                    buscador.focus();
+                }
+            });
+
+            document.addEventListener('click', function (evento) {
+                if (evento.target !== buscador &&
+                    !resultados.contains(evento.target)) {
+                    cerrarResultados();
+                }
+            });
+
+            buscador.form.addEventListener('submit', function (evento) {
+                if (!selector.value) {
+                    evento.preventDefault();
+                    buscador.focus();
+                    mostrarCoincidencias();
+
+                    ayuda.textContent =
+                        'Selecciona un estudiante de los resultados antes de continuar.';
+                }
+            });
+
+            const cursos = document.querySelectorAll('.curso-seleccion');
+            const total = document.getElementById('totalMatricula');
+            const beneficio = document.getElementById('AplicarBeneficio');
+            const situacion = document.getElementById('situacionEstudiante');
+
+            let porcentaje = 0;
+            let solicitud = 0;
+
+            const moneda = centavos => 'C$ ' +
+                (centavos / 100).toLocaleString('es-NI', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                });
+
+            function actualizarTotal() {
+                let centavos = 0;
+
+                const tasa = beneficio.checked
+                    ? Math.round(porcentaje * 100)
+                    : 0;
+
+                cursos.forEach(curso => {
+                    if (curso.checked) {
+                        const precio = Math.round(
+                            Number(curso.dataset.precio) * 100
+                        );
+
+                        centavos += precio -
+                            Math.floor((precio * tasa + 5000) / 10000);
+                    }
+                });
+
+                total.textContent = moneda(centavos);
+
+                const inicial = Math.floor(
+                    (centavos *
+                        Math.round(Number(total.dataset.inicial) * 100) +
+                        5000) / 10000
+                );
+
+                document.getElementById('resumenInicial').textContent =
+                    'Inicial mínimo: ' + moneda(inicial) +
+                    (beneficio.checked
+                        ? ' · Descuento disponible: ' + porcentaje + ' %.'
+                        : '.');
+            }
+
+            async function consultar() {
+                const turno = ++solicitud;
+
+                porcentaje = 0;
+                actualizarTotal();
+
+                if (!selector.value) {
+                    situacion.textContent =
+                        'Busca y selecciona un estudiante.';
+                    return;
+                }
+
+                situacion.textContent =
+                    'Consultando deuda y cursos activos…';
+
+                try {
+                    const response = await fetch(
+                        '@Url.Action("ResumenEstudiante", "Matricula")' +
+                        '?id=' + encodeURIComponent(selector.value),
+                        {
+                            headers: {
+                                Accept: 'application/json'
+                            }
+                        }
+                    );
+
+                    if (!response.ok || response.redirected) {
+                        throw new Error();
+                    }
+
+                    const datos = await response.json();
+
+                    if (turno !== solicitud) {
+                        return;
+                    }
+
+                    porcentaje = Number(datos.descuento || 0);
+
+                    situacion.textContent =
+                        'Deuda actual: ' +
+                        moneda(Math.round(datos.deuda * 100)) +
+                        ' · Cursos activos: ' +
+                        datos.cursosActivos +
+                        '. ' + datos.observacion;
+
+                    actualizarTotal();
+                } catch {
+                    if (turno === solicitud) {
+                        situacion.textContent =
+                            'No se pudo consultar la situación. Revisa tu sesión antes de guardar.';
+                    }
+                }
+            }
+
+            cursos.forEach(curso => {
+                curso.addEventListener('change', actualizarTotal);
+            });
+
+            beneficio.addEventListener('change', actualizarTotal);
+            selector.addEventListener('change', consultar);
+
+            actualizarTotal();
+
+            if (selector.value) {
+                consultar();
+            }
+        })();
+    </script>
+}

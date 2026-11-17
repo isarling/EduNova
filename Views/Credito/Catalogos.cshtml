@@ -1,0 +1,88 @@
+@model EduNova.DTOS.CatalogosVistaDto
+
+@{
+    ViewData["Title"] = "Catálogos";
+}
+
+<h1 class="mt-4">Categorías y modalidades</h1>
+
+<p>Clasifica los cursos según el área de formación y su modalidad.</p>
+
+<partial name="_Mensajes" />
+
+@foreach (var tipo in new[] { "categoria", "modalidad" })
+{
+    <section class="academia-card mb-4">
+        <h2 class="h4">
+            @(tipo == "categoria" ? "Categorías" : "Modalidades")
+        </h2>
+
+        <form asp-action="GuardarCatalogo"
+              method="post"
+              autocomplete="off"
+              class="d-flex gap-2 mb-4">
+
+            <input type="hidden" name="Tipo" value="@tipo" />
+
+            <label for="nuevo-@tipo" class="visually-hidden">
+                @(tipo == "categoria" ? "Nueva categoría" : "Nueva modalidad")
+            </label>
+
+            <input id="nuevo-@tipo"
+                   name="Nombre"
+                   minlength="2"
+                   maxlength="80"
+                   required
+                   autocomplete="off"
+                   class="form-control"
+                   placeholder="@(tipo == "categoria" ? "Nueva categoría" : "Nueva modalidad")" />
+
+            <button type="submit" class="btn btn-primary">
+                Agregar
+            </button>
+        </form>
+
+        @foreach (var elemento in
+            (tipo == "categoria" ? Model.Categorias : Model.Modalidades))
+        {
+            <div class="d-flex gap-2 mb-3 flex-wrap">
+                <form asp-action="GuardarCatalogo"
+                      method="post"
+                      autocomplete="off"
+                      class="d-flex gap-2 flex-grow-1">
+
+                    <input type="hidden" name="Tipo" value="@tipo" />
+
+                    <input type="hidden" name="Id" value="@elemento.Id" />
+
+                    <label for="@tipo-@elemento.Id" class="visually-hidden">
+                        Nombre
+                    </label>
+
+                    <input id="@tipo-@elemento.Id"
+                           name="Nombre"
+                           value="@elemento.Nombre"
+                           required
+                           minlength="2"
+                           maxlength="80"
+                           autocomplete="off"
+                           class="form-control" />
+
+                    <button type="submit" class="btn btn-outline-primary">
+                        Guardar
+                    </button>
+                </form>
+
+                <form asp-action="EliminarCatalogo" method="post">
+                    <input type="hidden" name="Tipo" value="@tipo" />
+
+                    <input type="hidden" name="id" value="@elemento.Id" />
+
+                    <button type="submit" class="btn btn-outline-danger">
+                        Eliminar
+                    </button>
+                </form>
+            </div>
+        }
+    </section>
+}

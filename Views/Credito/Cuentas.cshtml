@@ -1,0 +1,143 @@
+@model EduNova.DTOS.VincularVistaDto
+
+@{
+    ViewData["Title"] = "Acceso de estudiantes";
+}
+
+<h1 class="mt-4">Acceso de estudiantes</h1>
+
+<p>
+    Asocia cada estudiante con su cuenta de usuario para que pueda
+    consultar sus cursos, cuotas, recibos y deuda al iniciar sesión.
+</p>
+
+<div class="academia-card mb-4">
+    <h2 class="h5">¿Cómo dar acceso a un estudiante?</h2>
+
+    <ol>
+        <li>
+            En <strong>Administración → Usuarios</strong>, verifica que
+            tenga una cuenta con el rol <strong>Estudiante</strong>.
+        </li>
+        <li>
+            Busca su nombre en esta pantalla y selecciona
+            la cuenta que le pertenece.
+        </li>
+        <li>
+            Presiona <strong>Asociar cuenta</strong>.
+            Después podrá entrar con su correo y contraseña habituales.
+        </li>
+    </ol>
+
+    <p class="mb-0">
+        Solo podrá consultar su propia información.
+        Si no necesita entrar al sistema, puedes dejarlo sin cuenta;
+        el personal podrá seguir matriculándolo y registrando sus pagos.
+    </p>
+</div>
+
+<partial name="_Mensajes" />
+
+@if (Model.Estudiantes.Count == 0)
+{
+    <div class="alert alert-info">
+        Primero registra un estudiante desde el menú Estudiantes.
+    </div>
+}
+
+@foreach (var estudiante in Model.Estudiantes)
+{
+    var cuentaId = Model.Vinculos.GetValueOrDefault(estudiante.Id);
+    var cuentaActual = Model.Usuarios.FirstOrDefault(u => u.Id == cuentaId);
+
+    <section class="academia-card mb-3">
+        <h2 class="h4">@estudiante.Nombre</h2>
+
+        @if (cuentaActual != null)
+        {
+            <p>
+                <span class="badge bg-success">Cuenta asociada</span>
+            </p>
+
+            <p>
+                <strong>Cuenta actual:</strong> @cuentaActual.Nombre
+            </p>
+        }
+        else
+        {
+            <p>
+                <span class="badge bg-secondary">Sin cuenta asociada</span>
+            </p>
+
+            <p>
+                Este estudiante todavía no tiene una cuenta asociada
+                para consultar sus cursos y pagos.
+            </p>
+        }
+
+        @if (Model.Usuarios.Count == 0)
+        {
+            <div class="alert alert-info mb-0">
+                No hay cuentas con el rol Estudiante.
+                Primero configura una desde Administración → Usuarios
+                y después regresa a esta pantalla.
+            </div>
+        }
+        else
+        {
+            <form asp-action="Vincular" method="post">
+                <input type="hidden"
+                       name="EstudianteId"
+                       value="@estudiante.Id" />
+
+                <label for="usuario-@estudiante.Id" class="form-label">
+                    Selecciona la cuenta que pertenece a @estudiante.Nombre
+                </label>
+
+                <select id="usuario-@estudiante.Id"
+                        name="UsuarioId"
+                        class="form-select mb-2"
+                        aria-describedby="ayuda-@estudiante.Id"
+                        required>
+
+                    <option value="">Selecciona una cuenta</option>
+
+                    @foreach (var usuario in Model.Usuarios)
+                    {
+                        var usadaPorOtro = Model.Vinculos.Any(v =>
+                        v.Key != estudiante.Id &&
+                        v.Value == usuario.Id);
+
+                        if (!usadaPorOtro)
+                        {
+                            if (cuentaId == usuario.Id)
+                            {
+                                <option value="@usuario.Id" selected>
+                                    @usuario.Nombre
+                                </option>
+                            }
+                            else
+                            {
+                                <option value="@usuario.Id">
+                                    @usuario.Nombre
+                                </option>
+                            }
+                        }
+                    }
+        </select>
+
+        <p id="ayuda-@estudiante.Id" class="small">
+            Comprueba el usuario y correo antes de guardar.
+            Cada cuenta pertenece a un solo estudiante.
+            Las cuentas asociadas a otras personas no se muestran.
+        </p>
+
+        <button type="submit" class="btn btn-primary">
+            @(cuentaActual == null
+                        ? "Asociar cuenta"
+                        : "Actualizar cuenta asociada")
+        </button>
+    </form>
+        }
+    </section>
+}
