@@ -1,10 +1,10 @@
 using AutoMapper;
 using EduNova.DTOS;
-using EduNova.Repositories;
 using EduNova.Models;
-using System.Security.Cryptography;
 using EduNova.Models.Settings;
+using EduNova.Repositories;
 using Microsoft.Extensions.Options;
+using System.Security.Cryptography;
 
 namespace EduNova.Services
 {
@@ -15,7 +15,6 @@ namespace EduNova.Services
         IEmailService emailService,
         IMapper mapper,
         IOptions<JwtSettings> jwtSettings) : IAuthService
-
     {
         private readonly IUsuarioRepository _userRepo = userRepo;
         private readonly IRoleRepository _roleRepo = roleRepo;
@@ -25,17 +24,20 @@ namespace EduNova.Services
         private readonly JwtSettings _jwtSettings = jwtSettings.Value;
 
         public async Task<bool> ChangePasswordAsync(
-     string userName,
-     ChangePasswordDto dto)
+            string userName,
+            ChangePasswordDto dto)
         {
-            var validacion = new System.ComponentModel.DataAnnotations
-                .ValidationContext(dto);
+            var validacion =
+                new System.ComponentModel.DataAnnotations.ValidationContext(dto);
+
+            var errores =
+                new List<System.ComponentModel.DataAnnotations.ValidationResult>();
 
             if (!System.ComponentModel.DataAnnotations.Validator
                 .TryValidateObject(
                     dto,
                     validacion,
-                    new List<System.ComponentModel.DataAnnotations.ValidationResult>(),
+                    errores,
                     validateAllProperties: true))
             {
                 return false;
@@ -55,15 +57,14 @@ namespace EduNova.Services
                 return false;
             }
 
-            user.password = BCrypt.Net.BCrypt.EnhancedHashPassword(
-                dto.NewPassword);
+            user.password = BCrypt.Net.BCrypt
+                .EnhancedHashPassword(dto.NewPassword);
 
             user.DebeCambiarPassword = false;
             user.VersionSesion++;
 
             user.RefreshToken = null;
             user.RefreshTokenExpiryTime = null;
-
             user.PasswordResetToken = null;
             user.PasswordResetTokenExpiryTime = null;
 
@@ -72,12 +73,16 @@ namespace EduNova.Services
             return true;
         }
 
-        public async Task<bool> ConfirmEmailAsync(string email, string token)
+        public async Task<bool> ConfirmEmailAsync(
+            string email,
+            string token)
         {
             var user = await _userRepo.GetUsuarioByEmail(email);
 
             if (user == null || user.EmailConfirmedToken != token)
+            {
                 return false;
+            }
 
             var decodedToken = Uri.UnescapeDataString(token.Trim());
 
@@ -97,7 +102,10 @@ namespace EduNova.Services
             return true;
         }
 
-        public async Task<(bool Success, LoginResponseDto? result,string? ErrorMessage)> LoginAsync(LoginRequestDto dto)
+        public async Task<(
+            bool Success,
+            LoginResponseDto? result,
+            string? ErrorMessage)> LoginAsync(LoginRequestDto dto)
         {
             var user = await _userRepo.GetUsuarioByEmail(dto.Email);
 
@@ -117,7 +125,10 @@ namespace EduNova.Services
 
             if (!user.EmailConfirmed)
             {
-                return (false, null, "Debe confirmar su correo electrónico");
+                return (
+                    false,
+                    null,
+                    "Debe confirmar su correo electrónico");
             }
 
             var accessToken = _tokenService.GenerateAccessToken(user);
@@ -133,29 +144,41 @@ namespace EduNova.Services
                 AccessToken = accessToken,
                 RefreshToken = refreshToken,
                 ExpiresAt = DateTime.UtcNow.AddMinutes(
-                Math.Max(1, _jwtSettings.TokenValidateInMinutes)),
+                    Math.Max(1, _jwtSettings.TokenValidateInMinutes)),
                 RefreshTokenExpiresAt = user.RefreshTokenExpiryTime
             };
 
             return (true, result, null);
         }
 
-        public async Task<(bool Success, string? ErrorMessage)> RegisterAsync(
-    RegisterRequestDto dto)
+        public async Task<(
+            bool Success,
+            string? ErrorMessage)> RegisterAsync(RegisterRequestDto dto)
         {
             var exist = await _userRepo.GetUsuarioByEmail(dto.Email);
 
             if (exist != null)
-                return (false, "Correo ya en uso, Intente con otro correo");
+            {
+                return (
+                    false,
+                    "Correo ya en uso. Intente con otro correo.");
+            }
 
-            var usuarioRole = await _roleRepo.GetByNameAsync("Estudiante");
+            var usuarioRole = await _roleRepo
+                .GetByNameAsync("Estudiante");
 
             if (usuarioRole == null)
-                return (false, "El rol Estudiante no está configurado.");
+            {
+                return (
+                    false,
+                    "El rol Estudiante no está configurado.");
+            }
 
             var user = _mapper.Map<Usuario>(dto);
 
-            user.password = BCrypt.Net.BCrypt.EnhancedHashPassword(dto.Password);
+            user.password = BCrypt.Net.BCrypt
+                .EnhancedHashPassword(dto.Password);
+
             user.RolId = usuarioRole.Id;
 
             var tokenBytes = RandomNumberGenerator.GetBytes(64);
@@ -174,28 +197,35 @@ namespace EduNova.Services
             string htmlBody = $"""
                 <!DOCTYPE html>
                 <html>
-                <p>Hola,</p>
-                <p>Haz click en el siguiente boton para confirmar tu cuenta</p>
-                <p>
-                     <a href="{confirmationLink}"
-                        style="background:#007BFF;color:white;padding:10px 20px;border-radius:5px;text-decoration:none;">
-                          Confirmar cuenta
+                <body>
+                    <p>Hola,</p>
+                    <p>Haz clic en el siguiente botón para confirmar tu cuenta:</p>
+                    <p>
+                        <a href="{confirmationLink}"
+                           style="background:#007BFF;color:white;padding:10px 20px;border-radius:5px;text-decoration:none;">
+                            Confirmar cuenta
                         </a>
-                </p>
+                    </p>
+                </body>
                 </html>
                 """;
 
-            _emailService.SendPasswordResetEmail(user.Email, htmlBody);
+            _emailService.SendPasswordResetEmail(
+                user.Email,
+                htmlBody);
 
             return (true, null);
         }
 
-        public async Task<bool> ResendConfirmationEmailAsync(string email)
+        public async Task<bool> ResendConfirmationEmailAsync(
+            string email)
         {
             var user = await _userRepo.GetUsuarioByEmail(email);
 
             if (user == null || user.EmailConfirmed)
+            {
                 return false;
+            }
 
             var tokenBytes = RandomNumberGenerator.GetBytes(64);
             var rawToken = Convert.ToBase64String(tokenBytes);
@@ -209,39 +239,50 @@ namespace EduNova.Services
                 $"https://localhost:7035/Auth/ConfirmEmail?email={user.Email}&token={encodedToken}";
 
             string htmlBody = $"""
-                <!DOCTYPE html> 
-                
+                <!DOCTYPE html>
                 <html>
-                <p>Hola,</p>
-                <p>Haz click en el siguiente boton para confirmar tu cuenta</p>
-                <p>
-                   <a href="{confirmationLink}"
-                      style="background:#007BFF;color:white;padding:10px 20px;border-radius:5px;text-decoration:none;">
-                        Confirmar cuenta
-                   </a>
-                   </p>
-                   </html>
+                <body>
+                    <p>Hola,</p>
+                    <p>Haz clic en el siguiente botón para confirmar tu cuenta:</p>
+                    <p>
+                        <a href="{confirmationLink}"
+                           style="background:#007BFF;color:white;padding:10px 20px;border-radius:5px;text-decoration:none;">
+                            Confirmar cuenta
+                        </a>
+                    </p>
+                </body>
+                </html>
                 """;
 
-            _emailService.SendPasswordResetEmail(user.Email, htmlBody);
+            _emailService.SendPasswordResetEmail(
+                user.Email,
+                htmlBody);
 
             return true;
         }
 
-        public async Task<bool> ResetPasswordAsync(ResetPasswordRequestDto dto)
+        public async Task<bool> ResetPasswordAsync(
+            ResetPasswordRequestDto dto)
         {
             var user = await _userRepo.GetUsuarioByEmail(dto.Email);
 
             if (user == null)
+            {
                 return false;
+            }
 
             var providedToken = Uri.UnescapeDataString(
                 dto.Token ?? string.Empty);
 
             var storedToken = user.PasswordResetToken ?? string.Empty;
 
-            if (!storedToken.Equals(providedToken, StringComparison.Ordinal))
+            if (string.IsNullOrWhiteSpace(storedToken) ||
+                !storedToken.Equals(
+                    providedToken,
+                    StringComparison.Ordinal))
+            {
                 return false;
+            }
 
             if (!user.PasswordResetTokenExpiryTime.HasValue ||
                 user.PasswordResetTokenExpiryTime.Value < DateTime.UtcNow)
@@ -249,23 +290,32 @@ namespace EduNova.Services
                 return false;
             }
 
-            user.password = BCrypt.Net.BCrypt.EnhancedHashPassword(
-                dto.NewPassword);
+            user.password = BCrypt.Net.BCrypt
+                .EnhancedHashPassword(dto.NewPassword);
 
             user.PasswordResetToken = null;
             user.PasswordResetTokenExpiryTime = null;
+
+            user.DebeCambiarPassword = false;
+            user.VersionSesion++;
+
+            user.RefreshToken = null;
+            user.RefreshTokenExpiryTime = null;
 
             await _userRepo.SaveAsync();
 
             return true;
         }
 
-        public async Task<bool> SendResetPasswordLinkAsync(string email)
+        public async Task<bool> SendResetPasswordLinkAsync(
+            string email)
         {
             var user = await _userRepo.GetUsuarioByEmail(email);
 
             if (user == null)
+            {
                 return false;
+            }
 
             var token = _tokenService.GeneratePasswordResetToken();
             var encodedToken = Uri.EscapeDataString(token);
@@ -280,32 +330,37 @@ namespace EduNova.Services
 
             string htmlBody = $"""
                 <!DOCTYPE html>
-                <html><body>
-                <p>Hola,</p>
-                <p>Haz click en el siguiente boton para recuperar tu contraseña:</p>
-                <p>
-                  <a href="{confirmationLink}"
-                    style="background:#007BFF;color:white;padding:10px 20px;border-radius:5px;text-decoration:none;">
-                      Recuperar contraseña
-                 </a>
-                </p>
-                </body></html>
+                <html>
+                <body>
+                    <p>Hola,</p>
+                    <p>Haz clic en el siguiente botón para recuperar tu contraseña:</p>
+                    <p>
+                        <a href="{confirmationLink}"
+                           style="background:#007BFF;color:white;padding:10px 20px;border-radius:5px;text-decoration:none;">
+                            Recuperar contraseña
+                        </a>
+                    </p>
+                </body>
+                </html>
                 """;
 
-            _emailService.SendPasswordResetEmail(user.Email, htmlBody);
+            _emailService.SendPasswordResetEmail(
+                user.Email,
+                htmlBody);
 
             return true;
         }
 
         public async Task<LoginResponseDto?> RefreshAccessTokenAsync(
-    string refreshToken)
+            string refreshToken)
         {
-            var user = await _userRepo.GetUsuarioByRefreshTokenAsync(refreshToken);
+            var user = await _userRepo
+                .GetUsuarioByRefreshTokenAsync(refreshToken);
 
             if (user == null ||
-                  user.CuentaBloqueada ||
-                 !user.RefreshTokenExpiryTime.HasValue ||
-                  user.RefreshTokenExpiryTime.Value < DateTime.UtcNow)
+                user.CuentaBloqueada ||
+                !user.RefreshTokenExpiryTime.HasValue ||
+                user.RefreshTokenExpiryTime.Value < DateTime.UtcNow)
             {
                 return null;
             }
@@ -322,7 +377,7 @@ namespace EduNova.Services
                 AccessToken = newAccessToken,
                 RefreshToken = newRefreshToken,
                 ExpiresAt = DateTime.UtcNow.AddMinutes(
-                  Math.Max(1, _jwtSettings.TokenValidateInMinutes)),
+                    Math.Max(1, _jwtSettings.TokenValidateInMinutes)),
                 RefreshTokenExpiresAt = user.RefreshTokenExpiryTime
             };
         }

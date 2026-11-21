@@ -149,6 +149,11 @@ using (var scope = app.Services.CreateScope())
         .GetRequiredService<AppDBContext>();
 
     await DbSeeder.SeedAsync(context);
+
+    if (app.Environment.IsDevelopment())
+    {
+        await DemoSeeder.SeedAsync(context);
+    }
 }
 
 if (!app.Environment.IsDevelopment())

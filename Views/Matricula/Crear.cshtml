@@ -474,9 +474,23 @@
                 }
             }
 
-            cursos.forEach(curso => {
-                curso.addEventListener('change', actualizarTotal);
+            document.querySelectorAll('input[type="checkbox"]').forEach(curso => {
+            const fila = curso.closest('tr');
+            const cuotas = fila?.querySelector('input[type="number"]');
+
+            if (!cuotas) return;
+
+            function actualizarCuotas() {
+                cuotas.disabled = curso.disabled || !curso.checked;
+            }
+
+            actualizarCuotas();
+
+            curso.addEventListener('change', function () {
+                actualizarCuotas();
+                actualizarTotal();
             });
+        });
 
             beneficio.addEventListener('change', actualizarTotal);
             selector.addEventListener('change', consultar);

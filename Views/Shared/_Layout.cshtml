@@ -76,6 +76,12 @@
                             @await Component.InvokeAsync("Navigation")
 
                             <li class="nav-item ms-auto d-flex align-items-center gap-2">
+                                <a asp-controller="Auth"
+                                   asp-action="ChangePassword"
+                                   class="btn btn-outline-secondary btn-sm">
+                                    Cambiar contraseña
+                                </a>
+
                                 <button type="button"
                                         id="refreshSessionBtn"
                                         class="btn btn-outline-primary btn-sm"

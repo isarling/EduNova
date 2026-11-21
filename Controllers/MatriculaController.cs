@@ -29,6 +29,20 @@ public class MatriculaController(IMatriculaService service, ICreditoService cred
     [HttpPost, ValidateAntiForgeryToken, Authorize(Policy = "matricula.crear")]
     public async Task<IActionResult> Crear(CrearMatriculaDto dto)
     {
+        if (dto.Lineas != null)
+        {
+            for (int i = 0; i < dto.Lineas.Count; i++)
+            {
+                if (!dto.Lineas[i].Seleccionado)
+                {
+                    dto.Lineas[i].CantidadCuotas = 1;
+
+                    ModelState.Remove(
+                        $"Lineas[{i}].CantidadCuotas");
+                }
+            }
+        }
+
         if (dto.PagoInicial > 0 && !User.HasPermission("pago.crear"))
             ModelState.AddModelError("", "Para registrar un pago inicial también necesitas permiso de registrar abonos.");
         if (ModelState.IsValid)
